@@ -89,28 +89,6 @@ This automatically serves the app at `http://localhost:8080/` and launches it in
 
 ---
 
-## 🌐 Publish to GitHub & Live GitHub Pages
-
-Your project includes ready-to-use configuration for GitHub and automated deployment to **GitHub Pages**:
-
-1. **Create a new empty repository** on [GitHub](https://github.com/new) (e.g. `wanderlust-travel-app`).
-2. Run the included publisher script:
-   - **Double-click** `push-to-github.bat`, OR
-   - Run in PowerShell:
-     ```powershell
-     .\push-to-github.ps1 -RepoUrl "https://github.com/YOUR_USERNAME/wanderlust-travel-app.git"
-     ```
-3. **Enable GitHub Pages**:
-   - Go to your repository on GitHub &rarr; **Settings** &rarr; **Pages**.
-   - Under **Build and deployment** &rarr; **Source**, select **GitHub Actions**.
-   - The included workflow in `.github/workflows/deploy.yml` will automatically build and publish your app.
-   - Your web app will be live at:
-     ```
-     https://<YOUR_USERNAME>.github.io/wanderlust-travel-app/
-     ```
-
----
-
 ## 📁 Project Structure
 
 ```
