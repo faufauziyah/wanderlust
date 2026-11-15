@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WanderPulse - Discover Your Next Travel Destination</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet CSS & JS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Canvas Confetti for Celebration Effects -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col antialiased text-slate-800">
+
+  <!-- ============================================================
+       TOP HEADER & NAVIGATION BAR
+       ============================================================ -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm transition">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Branding -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="App.switchTab('finder')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-sky-600 bg-clip-text text-transparent">WanderPulse</span>
+              <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200/60 hidden sm:inline-block">AI Travel Hub</span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium hidden sm:block">Find your next destination & match your budget</p>
+          </div>
+        </div>
+
+        <!-- Global Utilities: Currency Picker & Wishlist Pill -->
+        <div class="flex items-center gap-3">
+          <!-- Currency Selector -->
+          <div class="flex items-center gap-1.5 bg-slate-100/80 hover:bg-slate-200/80 px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 transition">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <select id="currency-select" class="bg-transparent border-none outline-none cursor-pointer pr-1">
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="JPY">JPY (¥)</option>
+              <option value="CAD">CAD (CA$)</option>
+              <option value="AUD">AUD (A$)</option>
+              <option value="IDR">IDR (Rp)</option>
+            </select>
+          </div>
+
+          <!-- Quick Wishlist Button -->
+          <button 
+            onclick="App.switchTab('wishlist')" 
+            class="relative flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-xl border border-rose-200/60 text-xs font-bold transition shadow-sm"
+          >
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span class="hidden sm:inline">Wishlist</span>
+            <span id="header-wishlist-count" class="bg-rose-600 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Feature Tab Bar -->
+      <nav class="flex space-x-1 sm:space-x-4 border-t border-slate-100 overflow-x-auto py-1 scrollbar-none" aria-label="Tabs">
+        <button data-tab="finder" class="nav-tab-btn flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold text-indigo-600 border-b-2 border-indigo-600 transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <span>Destination Finder</span>
+        </button>
+
+        <button data-tab="map" class="nav-tab-btn flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-medium text-slate-600 hover:text-indigo-600 transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+          <span>Explore Map</span>
+        </button>
+
+        <button data-tab="budget" class="nav-tab-btn relative flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-medium text-slate-600 hover:text-indigo-600 transition whitespace-nowrap">
+          <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Budget Estimator & AI Recommender</span>
+          <span class="bg-gradient-to-r from-amber-500 to-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase tracking-wider">AI Match</span>
+        </button>
+
+        <button data-tab="planner" class="nav-tab-btn flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-medium text-slate-600 hover:text-indigo-600 transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>Trip Planner</span>
+        </button>
+
+        <button data-tab="wishlist" class="nav-tab-btn flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-medium text-slate-600 hover:text-indigo-600 transition whitespace-nowrap">
+          <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+          <span>Travel Wishlist</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       MAIN CONTENT CONTAINER
+       ============================================================ -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ========================================================
+         TAB 1: DESTINATION FINDER
+         ======================================================== -->
+    <section id="tab-panel-finder" class="tab-content-panel space-y-6">
+      
+      <!-- Hero Banner -->
+      <div class="relative bg-gradient-to-r from-indigo-900 via-indigo-800 to-sky-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl overflow-hidden">
+        <div class="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-sky-500/10 blur-2xl pointer-events-none"></div>
+        <div class="relative max-w-2xl space-y-3">
+          <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-sky-200 text-xs font-semibold px-3 py-1 rounded-full">
+            <span>✨ Discover 18+ Handpicked World Wonders</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+            Discover Your Next Dream Travel Destination
+          </h1>
+          <p class="text-sm sm:text-base text-indigo-100 leading-relaxed">
+            Search global wonders, filter by seasonal vibes, explore interactive cost breakdowns, and let our intelligent engine match your exact travel budget.
+          </p>
+        </div>
+      </div>
+
+      <!-- Search & Multi-dimension Filter Bar -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4">
+        
+        <!-- Search Input Row -->
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="Search destination, country, landmark (e.g. Kyoto, Lake Louise, Positano, temples, diving)..." 
+            class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+          />
+        </div>
+
+        <!-- Filter Dropdown Selectors Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1 text-xs">
+          <!-- Continent -->
+          <div>
+            <label class="block text-slate-500 font-semibold mb-1">Region / Continent</label>
+            <select id="filter-continent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="All">All Continents</option>
+              <option value="Asia">Asia</option>
+              <option value="Europe">Europe</option>
+              <option value="North America">North America</option>
+              <option value="South America">South America</option>
+              <option value="Africa">Africa</option>
+              <option value="Oceania">Oceania</option>
+            </select>
+          </div>
+
+          <!-- Travel Vibe -->
+          <div>
+            <label class="block text-slate-500 font-semibold mb-1">Travel Style / Vibe</label>
+            <select id="filter-vibe" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="All">All Travel Vibes</option>
+              <option value="Adventure">Adventure</option>
+              <option value="Culture & History">Culture & History</option>
+              <option value="Foodie">Foodie</option>
+              <option value="Romantic">Romantic</option>
+              <option value="Tropical & Beach">Tropical & Beach</option>
+              <option value="Mountain & Hiking">Mountain & Hiking</option>
+              <option value="Budget-friendly">Budget-friendly</option>
+              <option value="Luxury">Luxury</option>
+              <option value="Photography">Photography</option>
+              <option value="Wellness">Wellness</option>
+            </select>
+          </div>
+
+          <!-- Best Season -->
+          <div>
+            <label class="block text-slate-500 font-semibold mb-1">Best Season</label>
+            <select id="filter-season" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="All">Any Season</option>
+              <option value="Spring">Spring</option>
+              <option value="Summer">Summer</option>
+              <option value="Autumn">Autumn</option>
+              <option value="Winter">Winter</option>
+            </select>
+          </div>
+
+          <!-- Budget Tier -->
+          <div>
+            <label class="block text-slate-500 font-semibold mb-1">Budget Tier</label>
+            <select id="filter-budget-tier" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="All">All Budget Tiers</option>
+              <option value="$">$ (Budget under $60/day)</option>
+              <option value="$$">$$ (Moderate $60-$150/day)</option>
+              <option value="$$$">$$$ (Upscale $150-$300/day)</option>
+              <option value="$$$$">$$$$ (Luxury $300+/day)</option>
+            </select>
+          </div>
+
+          <!-- Sort Order -->
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-slate-500 font-semibold mb-1">Sort By</label>
+            <select id="filter-sort" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="featured">Featured Curations</option>
+              <option value="cost-asc">Daily Cost: Low to High</option>
+              <option value="cost-desc">Daily Cost: High to Low</option>
+              <option value="safety">Safety Rating</option>
+              <option value="name">Alphabetical</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Meta status line: Count & Reset Action -->
+        <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+          <span id="destinations-count-badge" class="font-semibold text-slate-600">Loading destinations...</span>
+          <button onclick="App.resetFilters()" class="text-indigo-600 hover:text-indigo-800 font-semibold transition">
+            Clear all filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Destinations Responsive Card Grid -->
+      <div id="destinations-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically by App.renderDestinationsGrid() -->
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TAB 2: EXPLORE MAP
+         ======================================================== -->
+    <section id="tab-panel-map" class="tab-content-panel hidden space-y-4">
+      
+      <!-- Map Header & Filter Controls -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+            Interactive Global Map
+          </h2>
+          <p class="text-xs text-slate-500">Click pins to inspect costs, view local tips, or jump directly into trip planning</p>
+        </div>
+
+        <!-- Quick Map Filters -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <button onclick="MapModule.setFilter('budget', 'All')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium text-slate-700 transition">All Pins</button>
+          <button onclick="MapModule.setFilter('budget', '$')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold transition">$ Budget Friendly</button>
+          <button onclick="MapModule.setFilter('vibe', 'Tropical & Beach')" class="px-2.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold transition">🏝️ Beach</button>
+          <button onclick="MapModule.setFilter('vibe', 'Mountain & Hiking')" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold transition">🏔️ Mountains</button>
+          <button onclick="MapModule.resetView()" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold transition">Reset Zoom</button>
+          <span id="map-destinations-count" class="bg-indigo-600 text-white font-bold px-2.5 py-1 rounded-full text-[11px] shadow">0 destinations</span>
+        </div>
+      </div>
+
+      <!-- Map Viewport Container -->
+      <div class="relative w-full h-[650px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
+        <div id="leaflet-map"></div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TAB 3: BUDGET ESTIMATOR & AI RECOMMENDER
+         ======================================================== -->
+    <section id="tab-panel-budget" class="tab-content-panel hidden space-y-8">
+      
+      <!-- Submode 1: Smart AI Budget Recommendation Engine -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <div class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-sky-50 border border-indigo-200/70 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full mb-2">
+            <span>💡 INTELLIGENT BUDGET RECOMMENDATION</span>
+          </div>
+          <h2 class="text-2xl font-black text-slate-900 tracking-tight">
+            "Which destination is the best for my budget?"
+          </h2>
+          <p class="text-sm text-slate-500 max-w-2xl">
+            Enter your total travel savings and trip parameters. WanderPulse's algorithmic matcher calculates realistic multi-day flights, lodging, meals, and activities to pinpoint your highest-value dream destination.
+          </p>
+        </div>
+
+        <!-- Budget Matcher Form Controls -->
+        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-5">
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- 1. Total User Budget -->
+            <div class="sm:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Your Total Trip Budget</label>
+                <span id="rec-budget-display" class="text-lg font-black text-indigo-600">$2,500</span>
+              </div>
+              <input 
+                type="range" 
+                id="rec-budget-input" 
+                min="400" 
+                max="10000" 
+                step="100" 
+                value="2500" 
+                oninput="App.runBudgetRecommender()"
+                class="w-full accent-indigo-600 cursor-pointer"
+              />
+              <div class="flex justify-between text-[10px] text-slate-400 font-semibold mt-1">
+                <span>$400</span>
+                <span>$2,500</span>
+                <span>$5,000</span>
+                <span>$10,000+</span>
+              </div>
+            </div>
+
+            <!-- 2. Trip Duration -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Trip Duration</label>
+              <select id="rec-days-select" onchange="App.runBudgetRecommender()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none">
+                <option value="4">4 Days (Long Weekend)</option>
+                <option value="7" selected>7 Days (One Week)</option>
+                <option value="10">10 Days</option>
+                <option value="14">14 Days (Two Weeks)</option>
+                <option value="21">21 Days (Three Weeks)</option>
+              </select>
+            </div>
+
+            <!-- 3. Travelers Count -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Travelers</label>
+              <select id="rec-travelers-select" onchange="App.runBudgetRecommender()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none">
+                <option value="1" selected>1 Person (Solo Traveler)</option>
+                <option value="2">2 People (Couple / Friends)</option>
+                <option value="3">3 People</option>
+                <option value="4">4 People (Family / Group)</option>
+              </select>
+            </div>
+
+            <!-- 4. Travel Comfort Style -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Travel Style</label>
+              <select id="rec-style-select" onchange="App.runBudgetRecommender()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none">
+                <option value="any" selected>Any / Best Fit</option>
+                <option value="backpacker">Backpacker / Budget ($)</option>
+                <option value="midRange">Comfortable Mid-Range ($$)</option>
+                <option value="luxury">Luxury / 5-Star ($$$$)</option>
+              </select>
+            </div>
+
+            <!-- 5. Preferred Vibe -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Preferred Vibe</label>
+              <select id="rec-vibe-select" onchange="App.runBudgetRecommender()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none">
+                <option value="All" selected>Any Vibe</option>
+                <option value="Tropical & Beach">Tropical & Beach</option>
+                <option value="Culture & History">Culture & History</option>
+                <option value="Mountain & Hiking">Mountain & Hiking</option>
+                <option value="Foodie">Foodie</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Romantic">Romantic</option>
+              </select>
+            </div>
+
+            <!-- 6. Include Flight Estimation -->
+            <div class="sm:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="block text-xs font-bold text-slate-800">Include Flight Estimation</span>
+                <span class="text-[11px] text-slate-400">Includes round-trip international flight allowance</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="rec-flights-check" checked onchange="App.runBudgetRecommender()" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Render Target for Algorithm Results -->
+        <div id="budget-recs-container">
+          <!-- Populated by App.runBudgetRecommender() -->
+        </div>
+      </div>
+
+      <!-- Submode 2: Granular Destination Budget Estimator -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Custom Destination Budget Calculator</h3>
+          <p class="text-xs text-slate-500">Pick any destination and dial in exact accommodation, dining, and transit expenses.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-12 gap-6 items-start">
+          <!-- Left: Input Form Controls (5 cols) -->
+          <div class="lg:col-span-5 bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Target Destination</label>
+              <select id="gran-dest-select" onchange="App.runGranularEstimator()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none">
+                <!-- Dynamically populated or static list -->
+                <option value="kyoto-japan">Kyoto, Japan</option>
+                <option value="bali-indonesia">Bali & Nusa Islands, Indonesia</option>
+                <option value="amalfi-italy">Amalfi Coast & Positano, Italy</option>
+                <option value="banff-canada">Banff & Lake Louise, Canada</option>
+                <option value="cape-town-south-africa">Cape Town, South Africa</option>
+                <option value="reykjavik-iceland">Reykjavik & Golden Circle, Iceland</option>
+                <option value="cusco-peru">Cusco & Machu Picchu, Peru</option>
+                <option value="swiss-alps-zermatt">Zermatt & Swiss Alps, Switzerland</option>
+                <option value="santorini-greece">Santorini, Greece</option>
+                <option value="queenstown-new-zealand">Queenstown, New Zealand</option>
+                <option value="marrakech-morocco">Marrakech & Sahara, Morocco</option>
+                <option value="oaxaca-mexico">Oaxaca City, Mexico</option>
+                <option value="tromso-norway">Tromsø, Norway</option>
+                <option value="bangkok-thailand">Bangkok, Thailand</option>
+                <option value="lisbon-portugal">Lisbon, Portugal</option>
+                <option value="tokyo-japan">Tokyo, Japan</option>
+                <option value="maui-hawaii">Maui (Hawaii), USA</option>
+                <option value="patagonia-chile">Patagonia, Chile</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Duration (Days)</label>
+                <input type="number" id="gran-days-input" min="1" max="60" value="7" onchange="App.runGranularEstimator()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none" />
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Travelers</label>
+                <input type="number" id="gran-travelers-input" min="1" max="10" value="2" onchange="App.runGranularEstimator()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Accommodation & Comfort Tier</label>
+              <select id="gran-style-select" onchange="App.runGranularEstimator()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none">
+                <option value="backpacker">Backpacker (Hostel, street food)</option>
+                <option value="midRange" selected>Mid-Range (Boutique hotel, casual cafes)</option>
+                <option value="luxury">Luxury (5-Star resort, fine dining)</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200">
+              <span class="font-bold text-slate-700">Include Flight Allowance</span>
+              <input type="checkbox" id="gran-flights-check" checked onchange="App.runGranularEstimator()" class="w-4 h-4 text-indigo-600 rounded">
+            </div>
+          </div>
+
+          <!-- Right: Visual Expense Breakdown Output (7 cols) -->
+          <div class="lg:col-span-7 bg-slate-900 text-white rounded-2xl p-6 shadow-xl space-y-6">
+            <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-white/10 pb-4">
+              <div>
+                <span class="text-xs text-sky-300 font-semibold uppercase tracking-wider block">Estimated Total Cost</span>
+                <span id="gran-total-display" class="text-3xl font-black text-emerald-400">$0</span>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 block">Daily Average</span>
+                <span id="gran-per-person-display" class="text-sm font-bold text-slate-200">$0/day</span>
+              </div>
+            </div>
+
+            <!-- Itemized breakdown bars -->
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5">
+                <span class="flex items-center gap-2">✈️ Flights (Roundtrip)</span>
+                <span id="gran-flight-display" class="font-bold text-sky-300">$0</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5">
+                <span class="flex items-center gap-2">🏨 Lodging & Accommodation</span>
+                <span id="gran-lodging-display" class="font-bold text-indigo-300">$0</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5">
+                <span class="flex items-center gap-2">🍜 Food, Dining & Cafes</span>
+                <span id="gran-food-display" class="font-bold text-amber-300">$0</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5">
+                <span class="flex items-center gap-2">🚕 Local Transport & Transit</span>
+                <span id="gran-transport-display" class="font-bold text-slate-300">$0</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5">
+                <span class="flex items-center gap-2">🎟️ Activities, Sights & Passes</span>
+                <span id="gran-act-display" class="font-bold text-purple-300">$0</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-300">
+                <span class="flex items-center gap-2">🛡️ Contingency & Safety Buffer (8%)</span>
+                <span id="gran-buffer-display" class="font-bold">$0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TAB 4: TRIP PLANNER & ITINERARY
+         ======================================================== -->
+    <section id="tab-panel-planner" class="tab-content-panel hidden space-y-6">
+      
+      <!-- Planner Control Bar: Trip Selection & New Trip Button -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Trip:</label>
+          <select id="planner-trip-select" onchange="App.onTripChange(this.value)" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <button onclick="App.openNewTripModal()" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>Create New Trip</span>
+        </button>
+      </div>
+
+      <!-- Main Planner View Area (Populated by App.renderPlanner()) -->
+      <div id="planner-main-view">
+        <!-- Day by day schedule and packing list -->
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TAB 5: TRAVEL WISHLIST & VISITED
+         ======================================================== -->
+    <section id="tab-panel-wishlist" class="tab-content-panel hidden space-y-6">
+      
+      <!-- Wishlist Metrics Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
+            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-semibold block uppercase">Dream Places Saved</span>
+            <span id="wishlist-stat-saved" class="text-2xl font-black text-slate-800">0</span>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-semibold block uppercase">Destinations Visited</span>
+            <span id="wishlist-stat-visited" class="text-2xl font-black text-slate-800">0</span>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-semibold block uppercase">Total Bucket List Budget</span>
+            <span id="wishlist-stat-budget" class="text-2xl font-black text-indigo-600">$0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wishlist Grid -->
+      <div id="wishlist-items-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered by App.renderWishlistView() -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       MODALS & FLOATING OVERLAYS
+       ============================================================ -->
+
+  <!-- Destination Detail Modal -->
+  <div id="destination-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="destination-modal-content" class="w-full max-w-3xl">
+      <!-- Injected by App.openDestinationModal() -->
+    </div>
+  </div>
+
+  <!-- Create New Trip Modal -->
+  <div id="new-trip-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 class="font-bold text-slate-900 text-lg">Create New Trip Plan</h3>
+        <button onclick="App.closeNewTripModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form onsubmit="App.handleCreateNewTrip(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Trip Name</label>
+          <input type="text" id="new-trip-title" placeholder="e.g. Kyoto Cherry Blossom Adventure" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 font-medium" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Destination</label>
+          <select id="new-trip-dest" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Start Date</label>
+            <input type="date" id="new-trip-start" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">End Date</label>
+            <input type="date" id="new-trip-end" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Travelers</label>
+            <input type="number" id="new-trip-travelers" min="1" max="10" value="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Travel Style</label>
+            <select id="new-trip-style" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium">
+              <option value="backpacker">Backpacker ($)</option>
+              <option value="midRange" selected>Mid-Range ($$)</option>
+              <option value="luxury">Luxury ($$$$)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Target Budget Cap (USD)</label>
+          <input type="number" id="new-trip-budget" min="100" step="50" value="2800" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium" />
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="App.closeNewTripModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow">
+            Create Trip
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Activity Modal -->
+  <div id="new-activity-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div>
+          <h3 class="font-bold text-slate-900 text-base">Add Scheduled Experience</h3>
+          <span id="act-day-display" class="text-xs text-indigo-600 font-semibold">Day 1</span>
+        </div>
+        <button onclick="App.closeNewActivityModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form onsubmit="App.handleCreateActivity(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="act-day-input" value="1" />
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Activity Title *</label>
+          <input type="text" id="act-title-input" required placeholder="e.g. Sunrise Torii Gate Hike" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 font-medium" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Time Slot</label>
+            <select id="act-time-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium">
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
+              <option value="Evening">Evening</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Category</label>
+            <select id="act-cat-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium">
+              <option value="Sightseeing">Sightseeing</option>
+              <option value="Food & Drink">Food & Drink</option>
+              <option value="Adventure">Adventure</option>
+              <option value="Transit">Transit</option>
+              <option value="Leisure">Leisure</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Location / Landmark</label>
+            <input type="text" id="act-loc-input" placeholder="e.g. Fushimi Inari" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Estimated Cost (USD)</label>
+            <input type="number" id="act-cost-input" min="0" step="5" value="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Notes / Insider Advice</label>
+          <textarea id="act-notes-input" rows="2" placeholder="e.g. Book entry passes in advance, bring wide-angle lens" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none font-medium"></textarea>
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="App.closeNewActivityModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow">
+            Add to Day
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-notification" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700/80">
+      <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+      <span id="toast-message" class="text-xs font-semibold">Notification</span>
+    </div>
+  </div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/destinations-data.js"></script>
+  <script src="js/budget-engine.js"></script>
+  <script src="js/map-module.js"></script>
+  <script src="js/planner-module.js"></script>
+  <script src="js/wishlist-module.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
